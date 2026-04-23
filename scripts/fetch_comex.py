@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 
 # Configurações da API do Comex Stat
-API_URL = "https://api.comexstat.mdic.gov.br/comexstat/consulta/dados"
+API_URL = "https://api-comexstat.mdic.gov.br/comexstat/consulta/dados"
 
 # Período fixo: janeiro/2024 até o mês passado
 DATA_INICIO = (2024, 1)  # ano, mês
