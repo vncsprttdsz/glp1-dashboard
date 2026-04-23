@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor GLP-1 – Importações Brasil</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --ink: #1a365d;
+            --ink2: #2d3748;
+            --muted: #718096;
+            --line: #e2e8f0;
+            --novo: #c53030;
+            --lilly: #2c5282;
+            --consol: #1a365d;
+            --pos: #276749;
+            --neg: #c53030;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0; padding: 2rem 1rem;
+            background: var(--bg); color: var(--ink2);
+        }
+        .container { max-width: 1200px; margin: auto; }
+        header { margin-bottom: 1.5rem; }
+        h1 { color: var(--ink); margin: 0 0 0.25rem; font-size: 1.6rem; }
+        .subtitle { color: var(--muted); font-size: 0.9rem; margin: 0; }
+        h2 { color: var(--ink); margin: 0 0 1rem; font-size: 1.1rem; font-weight: 600; }
+
+        /* KPI cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .kpi {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border-left: 4px solid var(--ink);
+        }
+        .kpi-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+            margin: 0 0 0.35rem;
+        }
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0;
+            line-height: 1.1;
+        }
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin: 0.35rem 0 0;
+        }
+        .kpi.pos { border-left-color: var(--pos); }
+        .kpi.neg { border-left-color: var(--neg); }
+        .pos-text { color: var(--pos); }
+        .neg-text { color: var(--neg); }
+
+        /* Chart cards */
+        .chart-box {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .chart-wrap { position: relative; height: 320px; }
+        .chart-wrap.tall { height: 380px; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-bottom: 0.75rem;
+        }
+        .btn {
+            padding: 0.35rem 0.75rem;
+            border: 1px solid var(--line);
+            background: var(--card);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--ink2);
+            transition: all 0.15s;
+        }
+        .btn:hover { background: #edf2f7; }
+        .btn.active {
+            background: var(--ink);
+            color: white;
+            border-color: var(--ink);
+        }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            font-variant-numeric: tabular-nums;
+        }
+        th, td {
+            padding: 8px 10px;
+            text-align: right;
+            border-bottom: 1px solid var(--line);
+            white-space: nowrap;
+        }
+        th {
+            background: var(--ink);
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        td:first-child, th:first-child { text-align: left; }
+        tbody tr:hover { background: #f7fafc; }
+        tbody tr:last-child td { font-weight: 600; }
+
+        .status {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .status.err { color: var(--neg); }
+        .na { color: #a0aec0; font-style: italic; }
+
+        .note {
+            background: #fefcbf;
+            border: 1px solid #f6e05e;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: #744210;
+            margin: 0.5rem 0;
+        }
+
+        @media (max-width: 900px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 500px) {
+            body { padding: 1rem 0.5rem; }
+            h1 { font-size: 1.3rem; }
+            .kpi-value { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Monitor de Importações GLP-1 – Brasil</h1>
+        <p class="subtitle">Comex Stat / MDIC · NCM 3004.39.29 (produto acabado) · <span id="data-status" class="status">Carregando...</span></p>
+    </header>
+
+    <!-- KPI Row -->
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- Main trend -->
+    <div class="chart-box">
+        <h2>Consolidado de importação (US$ M FOB)</h2>
+        <div class="controls">
+            <button class="btn active" data-metric="valor">US$ FOB</button>
+            <button class="btn" data-metric="kg">Peso (kg)</button>
+        </div>
+        <div class="chart-wrap tall"><canvas id="chartConsolidado"></canvas></div>
+    </div>
+
+    <div class="chart-grid">
+        <!-- Novo vs Lilly absolute -->
+        <div class="chart-box">
+            <h2>Novo vs Lilly (US$ M)</h2>
+            <div class="chart-wrap"><canvas id="chartMarca"></canvas></div>
+        </div>
+
+        <!-- Market share % -->
+        <div class="chart-box">
+            <h2>Market share (% do valor)</h2>
+            <div class="chart-wrap"><canvas id="chartShare"></canvas></div>
+        </div>
+    </div>
+
+    <!-- YoY growth -->
+    <div class="chart-box">
+        <h2>Crescimento a/a do consolidado (%)</h2>
+        <div class="chart-wrap"><canvas id="chartYoY"></canvas></div>
+    </div>
+
+    <!-- IFA placeholder -->
+    <div class="chart-box">
+        <h2>Proxy de manipulação (IFA)</h2>
+        <div class="note">
+            NCMs de IFA em revisão: semaglutida e tirzepatida são peptídeos
+            (capítulos 2937/3002), não heterocíclicos (2933). Módulo será
+            reativado quando os NCMs corretos estiverem confirmados.
+        </div>
+    </div>
+
+    <!-- Data table -->
+    <div class="chart-box">
+        <h2>Tabela de dados</h2>
+        <div class="table-wrap">
+            <table id="tabelaDados">
+                <thead>
+                    <tr>
+                        <th>Mês</th>
+                        <th>Novo (US$ M)</th>
+                        <th>Lilly (US$ M)</th>
+                        <th>Total (US$ M)</th>
+                        <th>Total (ton)</th>
+                        <th>Lilly share</th>
+                        <th>m/m</th>
+                        <th>a/a</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+// ---------- Formatters ----------
+const fmtM = v => (v / 1e6).toFixed(1);                // milhões com 1 casa
+const fmtM0 = v => (v / 1e6).toFixed(0);               // milhões sem casa
+const fmtT = v => (v / 1e3).toFixed(1);                // kg -> toneladas
+const fmtPct = v => (v == null || !isFinite(v)) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+const sign = v => v == null ? 'na' : (v >= 0 ? 'pos-text' : 'neg-text');
+
+// 3-mo moving average
+function mm3(arr) {
+    return arr.map((_, i) => {
+        if (i < 2) return null;
+        const w = arr.slice(i - 2, i + 1).filter(x => x > 0);
+        if (w.length === 0) return null;
+        return w.reduce((a, b) => a + b, 0) / w.length;
+    });
+}
+
+// Recalcula MoM corretamente (o JSON original tem alguns casos de divisão por zero)
+function recalcMoM(arr) {
+    return arr.map((v, i) => {
+        if (i === 0 || arr[i-1] <= 0 || v <= 0) return null;
+        return (v / arr[i-1] - 1) * 100;
+    });
+}
+
+// ---------- Render ----------
+let charts = {};
+
+function destroyCharts() {
+    Object.values(charts).forEach(c => c && c.destroy());
+    charts = {};
+}
+
+function renderKPIs(dados) {
+    const last = dados[dados.length - 1];
+    const prev = dados[dados.length - 2];
+    const lillyShare = last.marca_total_valor > 0
+        ? (last.lilly_valor / last.marca_total_valor * 100) : 0;
+
+    const kpis = [
+        {
+            label: `Último mês (${last.mes})`,
+            value: `US$ ${fmtM0(last.consolidado_valor)} M`,
+            sub: `${fmtT(last.consolidado_kg)} toneladas`,
+            cls: ''
+        },
+        {
+            label: 'Crescimento a/a',
+            value: fmtPct(last.consolidado_yoy),
+            sub: `vs ${(parseInt(last.mes.split('/')[1]) - 1)}`,
+            cls: last.consolidado_yoy >= 0 ? 'pos' : 'neg'
+        },
+        {
+            label: 'Crescimento m/m',
+            value: fmtPct(last.consolidado_mom),
+            sub: `vs ${prev.mes}`,
+            cls: last.consolidado_mom >= 0 ? 'pos' : 'neg'
+        },
+        {
+            label: 'Share Lilly (marca)',
+            value: lillyShare.toFixed(0) + '%',
+            sub: `Novo: ${(100 - lillyShare).toFixed(0)}%`,
+            cls: ''
+        }
+    ];
+
+    document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+        <div class="kpi ${k.cls}">
+            <p class="kpi-label">${k.label}</p>
+            <p class="kpi-value">${k.value}</p>
+            <p class="kpi-sub">${k.sub}</p>
+        </div>
+    `).join('');
+}
+
+function commonOpts(yLabel, tooltipFmt) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${ctx.dataset.label}: ${tooltipFmt(ctx.raw)}`
+                }
+            }
+        },
+        scales: {
+            y: {
+                title: { display: !!yLabel, text: yLabel, font: { size: 11 } },
+                ticks: { font: { size: 10 } },
+                grid: { color: '#edf2f7' }
+            },
+            x: {
+                ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 },
+                grid: { display: false }
+            }
+        }
+    };
+}
+
+function renderConsolidado(dados, metric) {
+    const field = metric === 'kg' ? 'consolidado_kg' : 'consolidado_valor';
+    const values = dados.map(d => d[field]);
+    const ma = mm3(values);
+    const labels = dados.map(d => d.mes);
+
+    const isKg = metric === 'kg';
+    const scaler = isKg ? (v => v / 1e3) : (v => v / 1e6);
+    const unit = isKg ? 't' : 'US$ M';
+    const tipFmt = v => isKg ? `${fmtT(v)} t` : `US$ ${fmtM(v)} M`;
+
+    if (charts.consolidado) charts.consolidado.destroy();
+    charts.consolidado = new Chart(document.getElementById('chartConsolidado'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Mensal',
+                    data: values.map(scaler),
+                    borderColor: 'rgba(26, 54, 93, 0.35)',
+                    backgroundColor: 'rgba(26, 54, 93, 0.08)',
+                    borderWidth: 1.5,
+                    pointRadius: 2,
+                    tension: 0.15,
+                    fill: true
+                },
+                {
+                    label: 'Média móvel 3m',
+                    data: ma.map(v => v == null ? null : scaler(v)),
+                    borderColor: '#1a365d',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            ...commonOpts(unit, tipFmt),
+            scales: {
+                y: {
+                    title: { display: true, text: unit, font: { size: 11 } },
+                    ticks: {
+                        font: { size: 10 },
+                        callback: v => isKg ? v.toFixed(0) : v.toFixed(0)
+                    },
+                    grid: { color: '#edf2f7' }
+                },
+                x: {
+                    ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function renderMarca(dados) {
+    const labels = dados.map(d => d.mes);
+    charts.marca = new Chart(document.getElementById('chartMarca'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Novo (Dinamarca)',
+                    data: dados.map(d => d.novo_valor / 1e6),
+                    borderColor: '#c53030',
+                    backgroundColor: 'rgba(197, 48, 48, 0.08)',
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    tension: 0.2
+                },
+                {
+                    label: 'Lilly (EUA + Alemanha)',
+                    data: dados.map(d => d.lilly_valor / 1e6),
+                    borderColor: '#2c5282',
+                    backgroundColor: 'rgba(44, 82, 130, 0.08)',
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    tension: 0.2
+                }
+            ]
+        },
+        options: commonOpts('US$ M', v => `US$ ${fmtM(v * 1e6)} M`)
+    });
+}
+
+function renderShare(dados) {
+    const labels = dados.map(d => d.mes);
+    const novoShare = dados.map(d => d.marca_total_valor > 0 ? (d.novo_valor / d.marca_total_valor * 100) : null);
+    const lillyShare = dados.map(d => d.marca_total_valor > 0 ? (d.lilly_valor / d.marca_total_valor * 100) : null);
+
+    charts.share = new Chart(document.getElementById('chartShare'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Novo',
+                    data: novoShare,
+                    borderColor: '#c53030',
+                    backgroundColor: 'rgba(197, 48, 48, 0.65)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: 'origin',
+                    tension: 0.2
+                },
+                {
+                    label: 'Lilly',
+                    data: lillyShare,
+                    borderColor: '#2c5282',
+                    backgroundColor: 'rgba(44, 82, 130, 0.65)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: '-1',
+                    tension: 0.2
+                }
+            ]
+        },
+        options: {
+            ...commonOpts('%', v => `${v.toFixed(1)}%`),
+            scales: {
+                y: {
+                    min: 0, max: 100,
+                    stacked: true,
+                    title: { display: true, text: '%', font: { size: 11 } },
+                    ticks: { font: { size: 10 }, callback: v => v + '%' },
+                    grid: { color: '#edf2f7' }
+                },
+                x: {
+                    ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function renderYoY(dados) {
+    const labels = dados.map(d => d.mes);
+    const yoy = dados.map(d => d.consolidado_yoy);
+    const colors = yoy.map(v => v == null ? '#cbd5e0' : (v >= 0 ? '#276749' : '#c53030'));
+
+    charts.yoy = new Chart(document.getElementById('chartYoY'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'a/a',
+                data: yoy,
+                backgroundColor: colors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...commonOpts('%', v => v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`),
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.raw == null ? 'sem base comparável' : `${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(1)}%`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderTable(dados) {
+    const tbody = document.querySelector('#tabelaDados tbody');
+    tbody.innerHTML = dados.map(d => {
+        const lillyShare = d.marca_total_valor > 0 ? (d.lilly_valor / d.marca_total_valor * 100) : null;
+        return `<tr>
+            <td>${d.mes}</td>
+            <td>${fmtM(d.novo_valor)}</td>
+            <td>${fmtM(d.lilly_valor)}</td>
+            <td><strong>${fmtM(d.consolidado_valor)}</strong></td>
+            <td>${fmtT(d.consolidado_kg)}</td>
+            <td>${lillyShare == null ? '—' : lillyShare.toFixed(0) + '%'}</td>
+            <td class="${sign(d.consolidado_mom)}">${fmtPct(d.consolidado_mom)}</td>
+            <td class="${sign(d.consolidado_yoy)}">${fmtPct(d.consolidado_yoy)}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ---------- Bootstrap ----------
+let DADOS = [];
+
+fetch('data/glp1_data.json')
+    .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+    .then(dados => {
+        if (!dados || !dados.length) {
+            document.getElementById('data-status').textContent = 'Nenhum dado disponível.';
+            document.getElementById('data-status').classList.add('err');
+            return;
+        }
+
+        // Recalcula MoM no cliente pra cobrir o caso de meses com zero (quando os dados estavam furados)
+        const valores = dados.map(d => d.consolidado_valor);
+        const mom = recalcMoM(valores);
+        dados.forEach((d, i) => d.consolidado_mom = mom[i]);
+
+        DADOS = dados;
+        const last = dados[dados.length - 1];
+        document.getElementById('data-status').textContent =
+            `${dados.length} meses · última obs: ${last.mes}`;
+
+        renderKPIs(dados);
+        renderConsolidado(dados, 'valor');
+        renderMarca(dados);
+        renderShare(dados);
+        renderYoY(dados);
+        renderTable(dados);
+    })
+    .catch(err => {
+        console.error('Erro ao carregar dados:', err);
+        const s = document.getElementById('data-status');
+        s.textContent = 'Falha ao carregar dados: ' + err.message;
+        s.classList.add('err');
+    });
+
+// Toggle valor/kg no chart consolidado
+document.querySelectorAll('.btn[data-metric]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn[data-metric]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (DADOS.length) renderConsolidado(DADOS, btn.dataset.metric);
+    });
+});
+</script>
+</body>
+</html>
