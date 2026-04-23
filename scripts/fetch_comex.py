@@ -3,10 +3,11 @@ import json
 import os
 import time
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 from collections import defaultdict
 
-# Configurações da API do Comex Stat - URL correta conforme documentação oficial
-API_URL = "https://api-comexstat.mdic.gov.br/general/data"
+# Configurações da API do Comex Stat - URL base correta com hífen
+API_URL = "https://api-comexstat.mdic.gov.br/general"
 
 # Período fixo: janeiro/2024 até o mês passado
 DATA_INICIO = (2024, 1)  # ano, mês
@@ -23,11 +24,11 @@ NCM_IFA = ["2933.21.90", "2933.90.90"]
 PAIS_NOVO = "Dinamarca"
 PAIS_LILLY = ["Estados Unidos", "Alemanha"]  # soma dos dois
 
-def post_com_retry(url, json, max_tentativas=3, espera_inicial=5):
-    """Tenta um POST, repetindo em caso de erro de conexão ou 5xx."""
+def get_com_retry(url, max_tentativas=3, espera_inicial=5):
+    """Tenta um GET, repetindo em caso de erro de conexão ou 5xx."""
     for tentativa in range(1, max_tentativas + 1):
         try:
-            resp = requests.post(url, json=json, timeout=30)
+            resp = requests.get(url, timeout=30)
             if resp.status_code < 500:
                 return resp
             else:
@@ -38,7 +39,7 @@ def post_com_retry(url, json, max_tentativas=3, espera_inicial=5):
             print(f"Aguardando {espera_inicial} segundos...")
             time.sleep(espera_inicial)
     # Última tentativa: lança exceção se não conseguiu
-    resp = requests.post(url, json=json, timeout=30)
+    resp = requests.get(url, timeout=30)
     resp.raise_for_status()
     return resp
 
@@ -53,7 +54,10 @@ def consultar_ncm(ncm_list, periodo):
             "periodo": periodo,
             "detalhamento": ["pais", "mes"]
         }
-        resp = post_com_retry(API_URL, json=payload)
+        # Converte para string JSON e aplica URL encoding
+        filter_str = json.dumps(payload)
+        url = f"{API_URL}?filter={requests.utils.quote(filter_str)}"
+        resp = get_com_retry(url)
         if resp.status_code == 200:
             dados = resp.json().get("data", [])
             registros.extend(dados)
