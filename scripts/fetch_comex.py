@@ -1,10 +1,12 @@
 import requests
 import json
+import os
+import time
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-# Configurações da API do Comex Stat
-API_URL = "https://api-comexstat.mdic.gov.br/comexstat/consulta/dados"
+# Configurações da API do Comex Stat - URL correta conforme documentação oficial
+API_URL = "https://api-comexstat.mdic.gov.br/general/data"
 
 # Período fixo: janeiro/2024 até o mês passado
 DATA_INICIO = (2024, 1)  # ano, mês
@@ -21,6 +23,25 @@ NCM_IFA = ["2933.21.90", "2933.90.90"]
 PAIS_NOVO = "Dinamarca"
 PAIS_LILLY = ["Estados Unidos", "Alemanha"]  # soma dos dois
 
+def post_com_retry(url, json, max_tentativas=3, espera_inicial=5):
+    """Tenta um POST, repetindo em caso de erro de conexão ou 5xx."""
+    for tentativa in range(1, max_tentativas + 1):
+        try:
+            resp = requests.post(url, json=json, timeout=30)
+            if resp.status_code < 500:
+                return resp
+            else:
+                print(f"Tentativa {tentativa}: status {resp.status_code}. Resposta: {resp.text[:200]}")
+        except requests.exceptions.RequestException as e:
+            print(f"Tentativa {tentativa}: exceção de rede: {e}")
+        if tentativa < max_tentativas:
+            print(f"Aguardando {espera_inicial} segundos...")
+            time.sleep(espera_inicial)
+    # Última tentativa: lança exceção se não conseguiu
+    resp = requests.post(url, json=json, timeout=30)
+    resp.raise_for_status()
+    return resp
+
 def consultar_ncm(ncm_list, periodo):
     """Retorna todos os registros de importação para uma lista de NCMs."""
     registros = []
@@ -30,9 +51,9 @@ def consultar_ncm(ncm_list, periodo):
             "filtro": ncm,
             "fluxo": "importacao",
             "periodo": periodo,
-            "detalhamento": ["pais", "mes"]   # também poderíamos incluir "uf" e "via", mas não são necessários agora
+            "detalhamento": ["pais", "mes"]
         }
-        resp = requests.post(API_URL, json=payload)
+        resp = post_com_retry(API_URL, json=payload)
         if resp.status_code == 200:
             dados = resp.json().get("data", [])
             registros.extend(dados)
@@ -70,7 +91,6 @@ def main():
     agg_ifa = agregar_por_mes_e_pais(registros_ifa)
 
     # 3. Construção das séries temporais (por mês)
-    # Lista de todos os meses no intervalo
     meses = []
     ano, mes = DATA_INICIO
     while (ano, mes) <= (ANO_FIM, MES_FIM):
@@ -80,7 +100,6 @@ def main():
             mes = 1
             ano += 1
 
-    # Estrutura para o JSON final
     dados_mensais = []
 
     for mes_str in meses:
@@ -123,7 +142,6 @@ def main():
         })
 
     # 4. Cálculo de crescimentos (y/y e m/m) para o consolidado
-    # Criar dicionário auxiliar: mes -> índice
     valores_consolidado = [d["consolidado_valor"] for d in dados_mensais]
 
     for i, d in enumerate(dados_mensais):
@@ -152,7 +170,8 @@ def main():
         else:
             d["consolidado_yoy"] = None
 
-    # 5. Salva o JSON
+    # 5. Salva o JSON (cria o diretório se necessário)
+    os.makedirs("data", exist_ok=True)
     with open("data/glp1_data.json", "w", encoding="utf-8") as f:
         json.dump(dados_mensais, f, ensure_ascii=False, indent=2)
 
