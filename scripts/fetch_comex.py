@@ -17,7 +17,7 @@ MES_FIM = ultimo_mes.month
 
 # NCMs SEM PONTOS (8 dígitos)
 NCM_MARCA = ["30043929"]           # Ozempic / Wegovy / Mounjaro (produto acabado)
-NCM_IFA   = ["29332190", "29339990"]  # IFA - semaglutida, tirzepatida
+NCM_IFA   = ["29332190", "29339090"]  # IFA - chapter 2933 (heterocíclicos com N)
 
 # Mapeamento dos países (como a API retorna em pt-BR)
 PAIS_NOVO  = "Dinamarca"
@@ -56,9 +56,12 @@ def consultar_ncm(ncm_list, periodo):
     payload = {
         "flow": "import",
         "monthDetail": True,
+        # IMPORTANTE: a API /general trata from/to como filtros independentes de ano E mês.
+        # Se mandarmos "2024-01" a "2026-03", ela retorna só jan/fev/mar de cada ano.
+        # Por isso: mês inicial sempre 01, mês final sempre 12. Filtramos no Python depois.
         "period": {
-            "from": f"{periodo['anoInicial']}-{periodo['mesInicial']:02d}",
-            "to":   f"{periodo['anoFinal']}-{periodo['mesFinal']:02d}",
+            "from": f"{periodo['anoInicial']}-01",
+            "to":   f"{periodo['anoFinal']}-12",
         },
         "filters": [
             {"filter": "ncm", "values": ncm_list}
