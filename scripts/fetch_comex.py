@@ -209,31 +209,42 @@ def main():
 
     print(f"OK: {len(dados_mensais)} meses salvos em data/glp1_data.json")
 
-    # ----- DIAGNÓSTICO: breakdown por país (marca) dos últimos 4 meses -----
-    print("\n=== Breakdown por país (NCM marca), últimos 4 meses ===")
+    # ----- DIAGNÓSTICO: grava em arquivo (e imprime no console) -----
+    # O arquivo data/diagnostico_paises.txt é commitado junto, dá pra abrir no celular.
+    linhas_out = []
+    def log(txt=""):
+        print(txt)
+        linhas_out.append(txt)
+
+    log("=== Breakdown por país (NCM marca), últimos 4 meses ===")
     ultimos = meses[-4:]
     for mes_str in ultimos:
         linhas = [(pais, v["valor"], v["kg"])
                   for (m, pais), v in agg_marca.items() if m == mes_str]
         linhas.sort(key=lambda x: x[1], reverse=True)
-        print(f"\n{mes_str}:")
+        log(f"\n{mes_str}:")
         if not linhas:
-            print("  (sem registros)")
+            log("  (sem registros)")
         for pais, vl, kg in linhas:
-            print(f"  {pais:<22} US$ {vl/1e6:>8.1f}M | {kg/1e3:>7.1f} t")
+            log(f"  {pais:<22} US$ {vl/1e6:>8.1f}M | {kg/1e3:>7.1f} t")
 
-    # Alerta: países fora do mapeamento com volume relevante
-    print("\n=== Países NÃO mapeados com volume relevante (qualquer mês) ===")
+    log("\n=== Países NÃO mapeados com volume relevante (acumulado) ===")
     mapeados = set(PAIS_NOVO) | set(PAIS_LILLY)
     nao_map = {}
     for (m, pais), v in agg_marca.items():
         if pais not in mapeados:
             nao_map[pais] = nao_map.get(pais, 0) + v["valor"]
+    achou = False
     for pais, vl in sorted(nao_map.items(), key=lambda x: x[1], reverse=True):
-        if vl > 1e6:  # acima de US$ 1M acumulado
-            print(f"  {pais:<22} US$ {vl/1e6:>8.1f}M acumulado")
-    if not any(vl > 1e6 for vl in nao_map.values()):
-        print("  (nenhum) - mapeamento Novo/Lilly cobre tudo")
+        if vl > 1e6:
+            log(f"  {pais:<22} US$ {vl/1e6:>8.1f}M acumulado")
+            achou = True
+    if not achou:
+        log("  (nenhum) - mapeamento Novo/Lilly cobre tudo")
+
+    with open("data/diagnostico_paises.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(linhas_out))
+    print("\nDiagnóstico salvo em data/diagnostico_paises.txt")
 
 if __name__ == "__main__":
     main()
