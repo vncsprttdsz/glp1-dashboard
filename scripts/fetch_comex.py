@@ -203,11 +203,58 @@ def main():
         else:
             d["consolidado_yoy"] = None
 
+    # ----- TRAVA ANTI-CLOBBER -----
+    # Roda diário => qualquer soluço da API não pode apagar dado bom.
+    # Regra: nunca regride um mês que já tinha valor > 0 para zero.
+    OUT_PATH = "data/glp1_data.json"
+    antigo_por_mes = {}
+    if os.path.exists(OUT_PATH):
+        try:
+            with open(OUT_PATH, encoding="utf-8") as f:
+                for r in json.load(f):
+                    antigo_por_mes[r["mes"]] = r
+        except (json.JSONDecodeError, KeyError, OSError) as e:
+            print(f"Aviso: não consegui ler o JSON anterior ({e}). Seguindo sem merge.")
+
+    regredidos = 0
+    novos_com_dado = 0
+    for i, d in enumerate(dados_mensais):
+        tem_dado_agora = d["consolidado_valor"] > 0
+        if tem_dado_agora:
+            novos_com_dado += 1
+        ant = antigo_por_mes.get(d["mes"])
+        # Se agora veio zero mas antes tinha dado, carrega o antigo (não regride)
+        if not tem_dado_agora and ant and ant.get("consolidado_valor", 0) > 0:
+            dados_mensais[i] = ant
+            regredidos += 1
+
+    if regredidos:
+        print(f"ATENÇÃO: {regredidos} mês(es) vieram vazios da API mas tinham dado antes. "
+              f"Mantidos os valores anteriores (sem regressão).")
+
+    # Guarda extra: se a coleta inteira veio degenerada, aborta sem escrever.
+    if antigo_por_mes and novos_com_dado == 0:
+        print("ERRO: a API não retornou NENHUM dado nesta rodada. "
+              "Abortando a escrita para preservar o histórico. Nada foi commitado.")
+        return  # sai sem reescrever o JSON nem o diagnóstico
+
     os.makedirs("data", exist_ok=True)
-    with open("data/glp1_data.json", "w", encoding="utf-8") as f:
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(dados_mensais, f, ensure_ascii=False, indent=2)
 
-    print(f"OK: {len(dados_mensais)} meses salvos em data/glp1_data.json")
+    print(f"OK: {len(dados_mensais)} meses salvos em {OUT_PATH} "
+          f"({novos_com_dado} com dado fresco, {regredidos} carregados do anterior)")
+
+    # Só sobrescreve o diagnóstico se a coleta recente teve dado de verdade.
+    # Caso contrário, preserva o último diagnóstico bom (não apaga com vazio).
+    ultimos = meses[-4:]
+    tem_dado_recente = any(
+        m in {mm for (mm, _p) in agg_marca.keys()} for m in ultimos
+    )
+    DIAG_PATH = "data/diagnostico_paises.txt"
+    if not tem_dado_recente and os.path.exists(DIAG_PATH):
+        print("Coleta recente vazia: diagnóstico anterior preservado (não sobrescrito).")
+        return
 
     # ----- DIAGNÓSTICO: grava em arquivo (e imprime no console) -----
     # O arquivo data/diagnostico_paises.txt é commitado junto, dá pra abrir no celular.
@@ -217,7 +264,6 @@ def main():
         linhas_out.append(txt)
 
     log("=== Breakdown por país (NCM marca), últimos 4 meses ===")
-    ultimos = meses[-4:]
     for mes_str in ultimos:
         linhas = [(pais, v["valor"], v["kg"])
                   for (m, pais), v in agg_marca.items() if m == mes_str]
@@ -242,7 +288,7 @@ def main():
     if not achou:
         log("  (nenhum) - mapeamento Novo/Lilly cobre tudo")
 
-    with open("data/diagnostico_paises.txt", "w", encoding="utf-8") as f:
+    with open(DIAG_PATH, "w", encoding="utf-8") as f:
         f.write("\n".join(linhas_out))
     print("\nDiagnóstico salvo em data/diagnostico_paises.txt")
 
