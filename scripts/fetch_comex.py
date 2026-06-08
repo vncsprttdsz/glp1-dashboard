@@ -25,9 +25,14 @@ NCM_IFA_EXTRA = ["29379000"]       # fallback residual se 29371900 vier muito ba
 
 # Mapeamento dos países (como a API retorna em pt-BR)
 # Novo Nordisk: Dinamarca (sede) + França (planta de Chartres)
-# Eli Lilly: EUA (Indianapolis) + Alemanha + Irlanda (Kinsale/Limerick, principal hub de tirzepatida)
+# Eli Lilly: EUA (Indianapolis/Lebanon) + Alemanha (Alzey) + Irlanda (Limerick) + Itália (Sesto Fiorentino)
+#   Itália confirmada via Comex: Sesto Fiorentino é o hub de tirzepatida da Lilly p/ mercados emergentes
 PAIS_NOVO  = ["Dinamarca", "França"]
-PAIS_LILLY = ["Estados Unidos", "Alemanha", "Irlanda"]
+PAIS_LILLY = ["Estados Unidos", "Alemanha", "Irlanda", "Itália"]
+# ATENÇÃO - países em revisão (deixados em "outros" de propósito):
+#   Áustria (~US$96M acum): alto US$/kg = produto acabado, mas fabricante não confirmado.
+#   China: aparece com kg altíssimo e valor baixo = provável bulk/IFA mal classificado no NCM de marca.
+PAIS_REVISAO = ["Áustria", "China"]
 
 def post_com_retry(url, payload, max_tentativas=3, espera_inicial=5):
     """POST com retry em erros de conexão ou 5xx."""
