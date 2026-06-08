@@ -1,16 +1,55 @@
 === Breakdown por país (NCM marca), últimos 4 meses ===
 
 02/2026:
-  (sem registros)
+  Estados Unidos         US$    165.3M |   210.2 t
+  Alemanha               US$     32.5M |    45.0 t
+  Dinamarca              US$      3.8M |     3.2 t
+  França                 US$      2.3M |     4.3 t
+  Áustria                US$      1.9M |     0.2 t
+  Itália                 US$      1.1M |    12.7 t
+  Índia                  US$      0.9M |     0.8 t
+  Bélgica                US$      0.1M |     0.2 t
+  Suíça                  US$      0.1M |     0.3 t
+  Argentina              US$      0.1M |     0.7 t
+  Reino Unido            US$      0.0M |     0.0 t
 
 03/2026:
-  (sem registros)
+  Estados Unidos         US$    264.2M |   364.4 t
+  Alemanha               US$     85.6M |   162.9 t
+  Itália                 US$     52.9M |   117.1 t
+  Dinamarca              US$     27.4M |    30.0 t
+  Áustria                US$     11.5M |     2.0 t
+  França                 US$      4.7M |    17.1 t
+  Reino Unido            US$      0.5M |     0.5 t
+  Índia                  US$      0.3M |     0.1 t
+  Bélgica                US$      0.2M |     0.4 t
+  Argentina              US$      0.0M |     0.4 t
 
 04/2026:
-  (sem registros)
+  Estados Unidos         US$    186.8M |   266.0 t
+  Itália                 US$     67.9M |   111.1 t
+  Dinamarca              US$     23.9M |    17.9 t
+  Áustria                US$      5.3M |     1.0 t
+  França                 US$      4.7M |    23.2 t
+  Alemanha               US$      3.1M |    13.8 t
 
 05/2026:
-  (sem registros)
+  Estados Unidos         US$     44.5M |    88.4 t
+  China                  US$      6.8M |    73.7 t
+  Alemanha               US$      5.4M |    28.0 t
+  Áustria                US$      2.5M |     0.6 t
+  França                 US$      2.2M |     3.3 t
+  Dinamarca              US$      0.9M |     1.6 t
+  Índia                  US$      0.5M |     0.3 t
+  Itália                 US$      0.5M |     0.1 t
+  Suíça                  US$      0.3M |     0.2 t
+  Bélgica                US$      0.0M |     0.0 t
 
 === Países NÃO mapeados com volume relevante (acumulado) ===
-  (nenhum) - mapeamento Novo/Lilly cobre tudo
+  Itália                 US$    163.6M acumulado
+  Áustria                US$     96.5M acumulado
+  Bélgica                US$     25.1M acumulado
+  China                  US$     21.0M acumulado
+  Índia                  US$      5.7M acumulado
+  Reino Unido            US$      3.9M acumulado
+  Suíça                  US$      1.2M acumulado
