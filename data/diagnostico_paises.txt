@@ -46,7 +46,6 @@
   Bélgica                US$      0.0M |     0.0 t
 
 === Países NÃO mapeados com volume relevante (acumulado) ===
-  Itália                 US$    163.6M acumulado
   Áustria                US$     96.5M acumulado
   Bélgica                US$     25.1M acumulado
   China                  US$     21.0M acumulado
