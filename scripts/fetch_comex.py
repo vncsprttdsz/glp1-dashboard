@@ -17,11 +17,17 @@ MES_FIM = ultimo_mes.month
 
 # NCMs SEM PONTOS (8 dígitos)
 NCM_MARCA = ["30043929"]           # Ozempic / Wegovy / Mounjaro (produto acabado)
-NCM_IFA   = ["29332190", "29339090"]  # IFA - chapter 2933 (heterocíclicos com N)
+# IFA de GLP-1 (semaglutida, tirzepatida, liraglutida) = hormônios polipeptídicos (cap. 2937)
+# Subposição 2937.19 = "Outros hormônios polipeptídicos e seus análogos estruturais"
+# Validação: Anvisa divulgou ~100kg importados em 2H/2025 (fonte: gov.br/anvisa, abr/2026)
+NCM_IFA   = ["29371900"]           # principal candidato - cruzar c/ Anvisa pra validar
+NCM_IFA_EXTRA = ["29379000"]       # fallback residual se 29371900 vier muito baixo
 
 # Mapeamento dos países (como a API retorna em pt-BR)
-PAIS_NOVO  = "Dinamarca"
-PAIS_LILLY = ["Estados Unidos", "Alemanha"]
+# Novo Nordisk: Dinamarca (sede) + França (planta de Chartres)
+# Eli Lilly: EUA (Indianapolis) + Alemanha + Irlanda (Kinsale/Limerick, principal hub de tirzepatida)
+PAIS_NOVO  = ["Dinamarca", "França"]
+PAIS_LILLY = ["Estados Unidos", "Alemanha", "Irlanda"]
 
 def post_com_retry(url, payload, max_tentativas=3, espera_inicial=5):
     """POST com retry em erros de conexão ou 5xx."""
@@ -141,17 +147,27 @@ def main():
 
     dados_mensais = []
     for mes_str in meses:
-        novo_valor = agg_marca.get((mes_str, PAIS_NOVO), {}).get("valor", 0)
-        novo_kg    = agg_marca.get((mes_str, PAIS_NOVO), {}).get("kg", 0)
+        novo_valor = sum(agg_marca.get((mes_str, p), {}).get("valor", 0) for p in PAIS_NOVO)
+        novo_kg    = sum(agg_marca.get((mes_str, p), {}).get("kg", 0)    for p in PAIS_NOVO)
 
         lilly_valor = sum(agg_marca.get((mes_str, p), {}).get("valor", 0) for p in PAIS_LILLY)
         lilly_kg    = sum(agg_marca.get((mes_str, p), {}).get("kg", 0)    for p in PAIS_LILLY)
 
-        marca_total_valor = novo_valor + lilly_valor
-        marca_total_kg    = novo_kg + lilly_kg
+        # marca_total = TODOS os países (não só os mapeados), pra nunca descartar fluxo
+        marca_total_valor = sum(v["valor"] for k, v in agg_marca.items() if k[0] == mes_str)
+        marca_total_kg    = sum(v["kg"]    for k, v in agg_marca.items() if k[0] == mes_str)
 
+        # Bucket "outros" = países fora do mapeamento Novo/Lilly
+        outros_valor = marca_total_valor - novo_valor - lilly_valor
+        outros_kg    = marca_total_kg - novo_kg - lilly_kg
+
+        # IFA total
         ifa_valor = sum(v["valor"] for k, v in agg_ifa.items() if k[0] == mes_str)
         ifa_kg    = sum(v["kg"]    for k, v in agg_ifa.items() if k[0] == mes_str)
+
+        # IFA da China = proxy direto de manipulação (peptídeos bulk para farmácias magistrais)
+        ifa_china_valor = agg_ifa.get((mes_str, "China"), {}).get("valor", 0)
+        ifa_china_kg    = agg_ifa.get((mes_str, "China"), {}).get("kg", 0)
 
         dados_mensais.append({
             "mes": mes_str,
@@ -159,10 +175,14 @@ def main():
             "novo_kg": novo_kg,
             "lilly_valor": lilly_valor,
             "lilly_kg": lilly_kg,
+            "outros_valor": outros_valor,
+            "outros_kg": outros_kg,
             "marca_total_valor": marca_total_valor,
             "marca_total_kg": marca_total_kg,
             "ifa_valor": ifa_valor,
             "ifa_kg": ifa_kg,
+            "ifa_china_valor": ifa_china_valor,
+            "ifa_china_kg": ifa_china_kg,
             "consolidado_valor": marca_total_valor + ifa_valor,
             "consolidado_kg": marca_total_kg + ifa_kg,
         })
@@ -188,6 +208,32 @@ def main():
         json.dump(dados_mensais, f, ensure_ascii=False, indent=2)
 
     print(f"OK: {len(dados_mensais)} meses salvos em data/glp1_data.json")
+
+    # ----- DIAGNÓSTICO: breakdown por país (marca) dos últimos 4 meses -----
+    print("\n=== Breakdown por país (NCM marca), últimos 4 meses ===")
+    ultimos = meses[-4:]
+    for mes_str in ultimos:
+        linhas = [(pais, v["valor"], v["kg"])
+                  for (m, pais), v in agg_marca.items() if m == mes_str]
+        linhas.sort(key=lambda x: x[1], reverse=True)
+        print(f"\n{mes_str}:")
+        if not linhas:
+            print("  (sem registros)")
+        for pais, vl, kg in linhas:
+            print(f"  {pais:<22} US$ {vl/1e6:>8.1f}M | {kg/1e3:>7.1f} t")
+
+    # Alerta: países fora do mapeamento com volume relevante
+    print("\n=== Países NÃO mapeados com volume relevante (qualquer mês) ===")
+    mapeados = set(PAIS_NOVO) | set(PAIS_LILLY)
+    nao_map = {}
+    for (m, pais), v in agg_marca.items():
+        if pais not in mapeados:
+            nao_map[pais] = nao_map.get(pais, 0) + v["valor"]
+    for pais, vl in sorted(nao_map.items(), key=lambda x: x[1], reverse=True):
+        if vl > 1e6:  # acima de US$ 1M acumulado
+            print(f"  {pais:<22} US$ {vl/1e6:>8.1f}M acumulado")
+    if not any(vl > 1e6 for vl in nao_map.values()):
+        print("  (nenhum) - mapeamento Novo/Lilly cobre tudo")
 
 if __name__ == "__main__":
     main()
