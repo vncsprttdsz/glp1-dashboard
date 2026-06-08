@@ -2,8 +2,8 @@ name: Atualizar dados Comex Stat - GLP-1
 
 on:
   schedule:
-    # Executa todo dia 5 do mês às 6h UTC (dados do mês anterior já disponíveis)
-    - cron: '0 6 5 * *'
+    # Executa todo dia às 6h UTC (3h BRT) para sempre pegar a última revisão do Comex Stat
+    - cron: '0 6 * * *'
   workflow_dispatch:   # Permite execução manual
 
 jobs:
@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/glp1_data.json
-          git diff --staged --quiet || git commit -m "Atualização mensal dos dados [skip ci]"
+          git add data/
+          git diff --staged --quiet || git commit -m "Atualização automática dos dados [skip ci]"
           git push
