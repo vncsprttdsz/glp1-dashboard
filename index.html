@@ -185,9 +185,9 @@
     </div>
 
     <div class="chart-grid">
-        <!-- Novo vs Lilly absolute -->
+        <!-- Novo vs Lilly vs Outros absolute -->
         <div class="chart-box">
-            <h2>Novo vs Lilly (US$ M)</h2>
+            <h2>Novo vs Lilly vs Outros (US$ M)</h2>
             <div class="chart-wrap"><canvas id="chartMarca"></canvas></div>
         </div>
 
@@ -208,9 +208,12 @@
     <div class="chart-box">
         <h2>Proxy de manipulação (IFA)</h2>
         <div class="note">
-            NCMs de IFA em revisão: semaglutida e tirzepatida são peptídeos
-            (capítulos 2937/3002), não heterocíclicos (2933). Módulo será
-            reativado quando os NCMs corretos estiverem confirmados.
+            Em calibração. O NCM 2937.19 (hormônios polipeptídicos) testado retornou
+            volume nulo, indício de que o IFA de GLP-1 entra por outro código. Pista em
+            aberto: a China aparece sob o NCM de marca com peso alto e valor baixo
+            (assinatura de bulk/IFA mal classificado). Módulo será ligado quando o
+            diagnóstico de NCM (diag_ncm_ifa.py) confirmar o código que bate com o
+            benchmark da Anvisa (~100 kg em 2H/2025).
         </div>
     </div>
 
@@ -224,6 +227,7 @@
                         <th>Mês</th>
                         <th>Novo (US$ M)</th>
                         <th>Lilly (US$ M)</th>
+                        <th>Outros (US$ M)</th>
                         <th>Total (US$ M)</th>
                         <th>Total (ton)</th>
                         <th>Lilly share</th>
@@ -417,11 +421,21 @@ function renderMarca(dados) {
                     tension: 0.2
                 },
                 {
-                    label: 'Lilly (EUA + Alemanha)',
+                    label: 'Lilly (EUA + Alemanha + Irlanda + Itália)',
                     data: dados.map(d => d.lilly_valor / 1e6),
                     borderColor: '#2c5282',
                     backgroundColor: 'rgba(44, 82, 130, 0.08)',
                     borderWidth: 2,
+                    pointRadius: 2,
+                    tension: 0.2
+                },
+                {
+                    label: 'Outros (não atribuído)',
+                    data: dados.map(d => (d.outros_valor || 0) / 1e6),
+                    borderColor: '#d69e2e',
+                    backgroundColor: 'rgba(214, 158, 46, 0.08)',
+                    borderWidth: 2,
+                    borderDash: [5, 4],
                     pointRadius: 2,
                     tension: 0.2
                 }
@@ -435,6 +449,7 @@ function renderShare(dados) {
     const labels = dados.map(d => d.mes);
     const novoShare = dados.map(d => d.marca_total_valor > 0 ? (d.novo_valor / d.marca_total_valor * 100) : null);
     const lillyShare = dados.map(d => d.marca_total_valor > 0 ? (d.lilly_valor / d.marca_total_valor * 100) : null);
+    const outrosShare = dados.map(d => d.marca_total_valor > 0 ? ((d.outros_valor || 0) / d.marca_total_valor * 100) : null);
 
     charts.share = new Chart(document.getElementById('chartShare'), {
         type: 'line',
@@ -456,6 +471,16 @@ function renderShare(dados) {
                     data: lillyShare,
                     borderColor: '#2c5282',
                     backgroundColor: 'rgba(44, 82, 130, 0.65)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: '-1',
+                    tension: 0.2
+                },
+                {
+                    label: 'Outros',
+                    data: outrosShare,
+                    borderColor: '#d69e2e',
+                    backgroundColor: 'rgba(214, 158, 46, 0.65)',
                     borderWidth: 1,
                     pointRadius: 0,
                     fill: '-1',
@@ -520,6 +545,7 @@ function renderTable(dados) {
             <td>${d.mes}</td>
             <td>${fmtM(d.novo_valor)}</td>
             <td>${fmtM(d.lilly_valor)}</td>
+            <td>${fmtM(d.outros_valor || 0)}</td>
             <td><strong>${fmtM(d.consolidado_valor)}</strong></td>
             <td>${fmtT(d.consolidado_kg)}</td>
             <td>${lillyShare == null ? '—' : lillyShare.toFixed(0) + '%'}</td>
