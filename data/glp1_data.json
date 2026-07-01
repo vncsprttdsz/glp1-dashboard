@@ -549,5 +549,24 @@
     "consolidado_kg": 196280.0,
     "consolidado_mom": -78.2,
     "consolidado_yoy": -42.5
+  },
+  {
+    "mes": "06/2026",
+    "novo_valor": 0,
+    "novo_kg": 0,
+    "lilly_valor": 0,
+    "lilly_kg": 0,
+    "outros_valor": 0,
+    "outros_kg": 0,
+    "marca_total_valor": 0,
+    "marca_total_kg": 0,
+    "ifa_valor": 0,
+    "ifa_kg": 0,
+    "ifa_china_valor": 0,
+    "ifa_china_kg": 0,
+    "consolidado_valor": 0,
+    "consolidado_kg": 0,
+    "consolidado_mom": -100.0,
+    "consolidado_yoy": -100.0
   }
 ]
