@@ -1,13 +1,5 @@
 === Breakdown por país (NCM marca), últimos 4 meses ===
 
-04/2026:
-  Estados Unidos         US$    186.8M |   266.0 t
-  Itália                 US$     67.9M |   111.1 t
-  Dinamarca              US$     23.9M |    17.9 t
-  Áustria                US$      5.3M |     1.0 t
-  França                 US$      4.7M |    23.2 t
-  Alemanha               US$      3.1M |    13.8 t
-
 05/2026:
   Estados Unidos         US$     44.5M |    88.4 t
   China                  US$      6.8M |    73.7 t
@@ -43,6 +35,9 @@
   Bélgica                US$      0.2M |     0.3 t
   Argentina              US$      0.2M |     1.1 t
   Tcheca, República      US$      0.0M |     0.0 t
+
+08/2026:
+  (sem registros)
 
 === Países NÃO mapeados com volume relevante (acumulado) ===
   Áustria                US$    108.6M acumulado
