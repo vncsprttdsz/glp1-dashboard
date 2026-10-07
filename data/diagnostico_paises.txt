@@ -37,12 +37,20 @@
   Malta                  US$      0.0M |     0.0 t
 
 09/2026:
-  (sem registros)
+  Dinamarca              US$     22.2M |    33.1 t
+  Estados Unidos         US$     19.4M |    43.9 t
+  Índia                  US$      7.3M |    26.8 t
+  França                 US$      5.4M |    36.4 t
+  Alemanha               US$      4.6M |    34.3 t
+  Itália                 US$      3.7M |     3.5 t
+  Áustria                US$      2.6M |     0.2 t
+  China                  US$      1.2M |    12.6 t
+  Argentina              US$      0.1M |     0.4 t
 
 === Países NÃO mapeados com volume relevante (acumulado) ===
-  Áustria                US$    108.6M acumulado
+  Áustria                US$    111.3M acumulado
   Bélgica                US$     25.5M acumulado
-  China                  US$     22.2M acumulado
-  Índia                  US$     12.9M acumulado
+  China                  US$     23.3M acumulado
+  Índia                  US$     20.2M acumulado
   Reino Unido            US$      3.9M acumulado
-  Argentina              US$      1.1M acumulado
+  Argentina              US$      1.2M acumulado
