@@ -628,21 +628,21 @@
   },
   {
     "mes": "10/2026",
-    "novo_valor": 0,
-    "novo_kg": 0,
-    "lilly_valor": 0,
-    "lilly_kg": 0,
-    "outros_valor": 0,
-    "outros_kg": 0,
-    "marca_total_valor": 0,
-    "marca_total_kg": 0,
+    "novo_valor": 29169685.0,
+    "novo_kg": 53119.0,
+    "lilly_valor": 172220488.0,
+    "lilly_kg": 346824.0,
+    "outros_valor": 6184710.0,
+    "outros_kg": 34058.0,
+    "marca_total_valor": 207574883.0,
+    "marca_total_kg": 434001.0,
     "ifa_valor": 0,
     "ifa_kg": 0,
     "ifa_china_valor": 0,
     "ifa_china_kg": 0,
-    "consolidado_valor": 0,
-    "consolidado_kg": 0,
-    "consolidado_mom": -100.0,
-    "consolidado_yoy": -100.0
+    "consolidado_valor": 207574883.0,
+    "consolidado_kg": 434001.0,
+    "consolidado_mom": 212.1,
+    "consolidado_yoy": 34.7
   }
 ]
